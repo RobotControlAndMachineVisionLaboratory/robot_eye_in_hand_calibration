@@ -1,0 +1,5 @@
+bool required
+---
+int32[] x_image
+int32[] y_image
+int32[] r_image
