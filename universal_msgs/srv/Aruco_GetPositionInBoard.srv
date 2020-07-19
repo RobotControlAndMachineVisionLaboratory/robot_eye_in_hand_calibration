@@ -1,6 +1,0 @@
-#传入球心像素坐标，返回球心在桌面(board)参考系下的世界坐标
-geometry_msgs/Point[] center_in_pixel
-
----
-geometry_msgs/Point[] center_in_board
-int32 state

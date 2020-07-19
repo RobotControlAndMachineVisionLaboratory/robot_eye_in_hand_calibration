@@ -1,8 +1,0 @@
-#传入规划得到的击球点和击球方向(桌面坐标系board)， 返回该击球点 在机器人末端坐标系下(robot-end)的位姿
-float64[3] pose_board
-
----
-float64[3] xyz
-float64[3] rxyz
-int32 state
-
