@@ -1,0 +1,23 @@
+%YAML:1.0
+---
+calibrationDate: "Mon Jul 20 18:48:57 2020\n"
+failedIndex: [ 2, 17 ]
+Eye-hand translation: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -5.8820125242983181e+02, -2.7798666413088981e+01,
+       9.4831020445822162e+01 ]
+Eye-hand rotation: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ 2.9105027726993754e-01, 4.3404146215428169e-01,
+       -9.9031677778906335e-01 ]
+Eye-hand rotation theta: 1.1197453737258911e+00
+Eye-hand rotation axis: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ 2.5992541170452327e-01, 3.8762514437548651e-01,
+       -8.8441247539504331e-01 ]

@@ -1,4 +1,4 @@
-#include "../include/eye_hand_calibration/config.h"
+#include "config.h"
 
 void Config::setParameterFile(const std::string& fileName)
 {

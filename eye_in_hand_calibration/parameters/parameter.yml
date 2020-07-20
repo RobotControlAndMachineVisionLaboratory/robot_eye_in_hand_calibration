@@ -2,47 +2,51 @@
 squareSize: 25.0  #mm
 boardWidth: 9
 boardHeight: 6
-robotFileName: "parameters/robot_pose_xtion.txt"
-imageFileName: "parameters/imageList.xml"
-outputFileName: "parameters/out_camera_data.yml"
-eyehandFileName: "parameters/EyeHandParameter.yml"
-variFileName: "parameters/VarifyPose.yml"
+robotFileName: "parameters/input/robot_pose_xtion_ifs.txt"
+imageFileName: "parameters/input/imageList.xml"
+outputFileName: "parameters/output/out_camera_data.yml"
+eyehandFileName: "parameters/output/EyeHandParameter.yml"
+variFileName: "parameters/output/VarifyPose.yml"
 
 img_num: 18
+
+Scale2Millimeter: 1000.0
+IsRotationInRadian: 1
+
 
 color_topic: "/camera/rgb/image_rect_color"  #"color"
 
 varify_num: 5
 
-#varify pose 
+#varify pose
 varify_alpha_1: 1.4   #pi/3
 varify_beta_1: 1.05
-varify_x_1: 50 
+varify_x_1: 50
 varify_y_1: 50
 varify_R_1: 400
 
-varify_alpha_2: 1.7   
+varify_alpha_2: 1.7
 varify_beta_2: 1.2
-varify_x_2: 0 
+varify_x_2: 0
 varify_y_2: 0
 varify_R_2: 300
 
-varify_alpha_3: 1.5   
+varify_alpha_3: 1.5
 varify_beta_3: 0.8
-varify_x_3: 25 
+varify_x_3: 25
 varify_y_3: 25
 varify_R_3: 300
 
-varify_alpha_4: 1.4   
+varify_alpha_4: 1.4
 varify_beta_4: 1.05
-varify_x_4: 50 
+varify_x_4: 50
 varify_y_4: 75
 varify_R_4: 350
 
-varify_alpha_5: 2.1    
+varify_alpha_5: 2.1
 varify_beta_5: 2.0
-varify_x_5: 50 
+varify_x_5: 50
 varify_y_5: 50
 varify_R_5: 300
 
- 
+

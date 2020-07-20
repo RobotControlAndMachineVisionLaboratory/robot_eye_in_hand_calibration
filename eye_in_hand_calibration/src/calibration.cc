@@ -1,79 +1,36 @@
-////-----------------------------------------------------------
+////--------------------------------------------------------------------
 ////  This .cc is used for single camera calibration. It is adpated
 ////  from the opencv calibration example. After camera calibration
-////  is finished, eye-hand calibration and result varification can be 
+////  is finished, eye-hand calibration and result varification can be
 ////  performed.
 ////
-////  Author: LI KAI 
+////  Author: LI KAI
 ////  Date: 2017.10.27
-////-----------------------------------------------------------
-#include <opencv2/opencv.hpp>
+////
+////  This file is futher completed for robustness and compatibility.
+////
+////  Author: Ziqi CHAI
+////  Date: 2020.07.20
+////--------------------------------------------------------------------
 
+//C++
 #include <cctype>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 #include <iostream>
 
-#include "../include/eye_hand_calibration/eyeHand.h"
-#include "../include/eye_hand_calibration/config.h"
+//OpenCV
+#include <opencv2/opencv.hpp>
+
+//Eigen
+
+//Customed
+#include "eyeHand.h"
+#include "config.h"
+
 using namespace cv;
 using namespace std;
-
-const char * usage =
-" \nexample command line for calibration from a live feed.\n"
-"   calibration  -w 4 -h 5 -s 0.025 -o camera.yml -op -oe\n"
-" \n"
-" example command line for calibration from a list of stored images:\n"
-"   imagelist_creator image_list.xml *.png\n"
-"   calibration -w 4 -h 5 -s 0.025 -o camera.yml -op -oe image_list.xml\n"
-" where image_list.xml is the standard OpenCV XML/YAML\n"
-" use imagelist_creator to create the xml or yaml list\n"
-" file consisting of the list of strings, e.g.:\n"
-" \n"
-"<?xml version=\"1.0\"?>\n"
-"<opencv_storage>\n"
-"<images>\n"
-"view000.png\n"
-"view001.png\n"
-"<!-- view002.png -->\n"
-"view003.png\n"
-"view010.png\n"
-"one_extra_view.jpg\n"
-"</images>\n"
-"</opencv_storage>\n";
-
-static void help()
-{
-    printf( "This is a camera calibration sample.\n"
-        "Usage: calibration\n"
-        "     -w <board_width>         # the number of inner corners per one of board dimension\n"
-        "     -h <board_height>        # the number of inner corners per another board dimension\n"
-        "     [-pt <pattern>]          # the type of pattern: chessboard or circles' grid\n"
-        "     [-n <number_of_frames>]  # the number of frames to use for calibration\n"
-        "                              # (if not specified, it will be set to the number\n"
-        "                              #  of board views actually available)\n"
-        "     [-d <delay>]             # a minimum delay in ms between subsequent attempts to capture a next view\n"
-        "                              # (used only for video capturing)\n"
-        "     [-s <squareSize>]       # square size in some user-defined units (1 by default)\n"
-        "     [-o <out_camera_params>] # the output filename for intrinsic [and extrinsic] parameters\n"
-        "     [-op]                    # write detected feature points\n"
-        "     [-oe]                    # write extrinsic parameters\n"
-        "     [-zt]                    # assume zero tangential distortion\n"
-        "     [-a <aspectRatio>]      # fix aspect ratio (fx/fy)\n"
-        "     [-p]                     # fix the principal point at the center\n"
-        "     [-v]                     # flip the captured images around the horizontal axis\n"
-        "     [-V]                     # use a video file, and not an image list, uses\n"
-        "                              # [input_data] string for the video file name\n"
-        "     [-su]                    # show undistorted images after calibration\n"
-        "     [input_data]             # input data, one of the following:\n"
-        "                              #  - text file with a list of the images of the board\n"
-        "                              #    the text file can be generated with imagelist_creator\n"
-        "                              #  - name of video file with a video of the board\n"
-        "                              # if input_data not specified, a live view from the camera is used\n"
-        "\n" );
-    printf("\n%s",usage);
-}
 
 enum { DETECTION = 0, CAPTURING = 1, CALIBRATED = 2 };
 enum Pattern { CHESSBOARD, CIRCLES_GRID, ASYMMETRIC_CIRCLES_GRID };
@@ -312,41 +269,41 @@ struct Origin
 	cv::Point2f p;
 	Origin(cv::Mat img):img(img){};
 };
-void on_mouse(int event,int x,int y,int flags,void* ustc)//event鼠标事件代号，x,y鼠标坐标，flags拖拽和键盘操作的代号,ustc: user parameter 
-{  
+void on_mouse(int event,int x,int y,int flags,void* ustc)//event鼠标事件代号，x,y鼠标坐标，flags拖拽和键盘操作的代号,ustc: user parameter
+{
 	Mat tmp;
-	static Point pre_pt(-1,-1);//初始坐标  
-	static Point cur_pt(-1,-1);//实时坐标  
+	static Point pre_pt(-1,-1);//初始坐标
+	static Point cur_pt(-1,-1);//实时坐标
 	Mat img0 = ((Origin*)ustc)->img;
 	Point2f Mouse_origin;
-	string temp;  
-	if (event == CV_EVENT_LBUTTONDOWN)//左键按下，读取初始坐标，并在图像上该点处划圆  
-	{  
-		//org.copyTo(img);//将原始图片复制到img中  
+	string temp;
+	if (event == CV_EVENT_LBUTTONDOWN)//左键按下，读取初始坐标，并在图像上该点处划圆
+	{
+		//org.copyTo(img);//将原始图片复制到img中
 		stringstream x_s, y_s;
 		x_s << x;
 		y_s << y;
-		pre_pt = Point(x,y);  
-		putText(img0,temp,pre_pt,FONT_HERSHEY_SIMPLEX,0.5,Scalar(0,0,255),1,8);//在窗口上显示坐标  
-		circle(img0,pre_pt,2,Scalar(255,0,0),CV_FILLED,CV_AA,0);//划圆  
+		pre_pt = Point(x,y);
+		putText(img0,temp,pre_pt,FONT_HERSHEY_SIMPLEX,0.5,Scalar(0,0,255),1,8);//在窗口上显示坐标
+		circle(img0,pre_pt,2,Scalar(255,0,0),CV_FILLED,CV_AA,0);//划圆
 		Mouse_origin = pre_pt;
 		((Origin*)ustc)->p = pre_pt;
-		imshow("Image View",img0);  	
-	}  
-	else if (event == CV_EVENT_MOUSEMOVE && !(flags & CV_EVENT_FLAG_LBUTTON))//左键没有按下的情况下鼠标移动的处理函数  
-	{  
-		img0.copyTo(tmp);//将img复制到临时图像tmp上，用于显示实时坐标  
+		imshow("Image View",img0);
+	}
+	else if (event == CV_EVENT_MOUSEMOVE && !(flags & CV_EVENT_FLAG_LBUTTON))//左键没有按下的情况下鼠标移动的处理函数
+	{
+		img0.copyTo(tmp);//将img复制到临时图像tmp上，用于显示实时坐标
 		stringstream x_s, y_s;
 		x_s << x;
 		y_s << y;
 		temp = "(" + x_s.str() + "," + y_s.str() + ")";
-		cur_pt = Point(x,y);  
-		putText(tmp,temp,cur_pt,FONT_HERSHEY_SIMPLEX,0.5,Scalar(0,0,255));//只是实时显示鼠标移动的坐标  
-		imshow("Image View",tmp);  
-	}  
+		cur_pt = Point(x,y);
+		putText(tmp,temp,cur_pt,FONT_HERSHEY_SIMPLEX,0.5,Scalar(0,0,255));//只是实时显示鼠标移动的坐标
+		imshow("Image View",tmp);
+	}
 	else if (event == CV_EVENT_RBUTTONDOWN)
-		{ 
-			cvDestroyWindow("Image View");		
+		{
+			cvDestroyWindow("Image View");
 			return;
 		}
 }
@@ -366,16 +323,22 @@ int getClosestIndex(const vector<int>& cornerIndex,const vector<cv::Point2f>& po
 
 int main( int argc, char** argv )
 {
+    if( argc < 2 )
+    {
+        std::cout << "cd to base path of this project, and run: rosrun eye_in_hand_calibration calibration parameters/parameter.yml" << std::endl
+        return 0;
+    }
+
     string paraFileName = argv[1];
     Config::setParameterFile(paraFileName);
 
     Size boardSize, imageSize;
-    float squareSize = Config::get<float>("squareSize");//<<-----------------------------parameter
-    float aspectRatio = 1.f;   
+    float squareSize = Config::get<float>("squareSize");
+    float aspectRatio = 1.f;
     Mat cameraMatrix, distCoeffs;
-    string outputFilename_str = Config::get<string>("outputFileName");   //imageFileName
-    const char* outputFilename = outputFilename_str.c_str();//"out_camera_data.yml";
-    string inputFilename_str = Config::get<string>("imageFileName");   //imageFileName
+    string outputFilename_str = Config::get<string>("outputFileName");
+    const char* outputFilename = outputFilename_str.c_str();
+    string inputFilename_str = Config::get<string>("imageFileName");
     cout << inputFilename_str << endl;
     const char* inputFilename = inputFilename_str.c_str();
 
@@ -397,12 +360,6 @@ int main( int argc, char** argv )
 
     vector<int> failedIndex;
     int currentIndex = 0;
-
-    if( argc < 2 )
-    {
-        help();
-        return 0;
-    }
 
 	//--------------------------------------read parameters-----------------------------------------------------------------
     boardSize.width = Config::get<int>("boardWidth");
@@ -483,7 +440,7 @@ int main( int argc, char** argv )
         if(found)
             drawChessboardCorners( view, boardSize, Mat(pointbuf), found );
         else{
-        	failedIndex.push_back(currentIndex-1);   			//<<<---------------------------------------------------record failed 
+        	failedIndex.push_back(currentIndex-1);   			//<<<---------------------------------------------------record failed
         }
         string msg = mode == CAPTURING ? "100/100" :
             mode == CALIBRATED ? "Calibrated" : "Press 'g' to start";
@@ -517,7 +474,7 @@ int main( int argc, char** argv )
         cornerIndex.push_back(0);cornerIndex.push_back(0 + boardSize.width - 1);
         cornerIndex.push_back(0 + boardSize.width * (boardSize.height-1));
         cornerIndex.push_back(boardSize.width * boardSize.height - 1);
-        
+
         if(found){
         	int closestIndex = getClosestIndex(cornerIndex,pointbuf,o.p);
         	// cout << "num of corners  " << pointbuf.size() << endl;

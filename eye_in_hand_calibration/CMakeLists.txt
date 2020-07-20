@@ -21,6 +21,8 @@ set(CUDA_USE_STATIC_CUDA_RUNTIME OFF)
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
+
+
 add_message_files(
   FILES
   Command.msg
@@ -31,13 +33,14 @@ generate_messages(DEPENDENCIES sensor_msgs std_msgs ur_msgs)
 catkin_package(CATKIN_DEPENDS cv_bridge image_transport roscpp rospy sensor_msgs std_msgs message_runtime)
 
 include_directories(
+  /usr/include/eigen3
   include
   ${catkin_INCLUDE_DIRS}
 )
 
 
 #self-defined library
-add_library(config src/libs/config.cc)
+add_library(config src/libs/config.cpp)
 add_library(eyeHand src/libs/eyeHand.cc)
 
 ######-------------------add_executable--------------------
