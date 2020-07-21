@@ -21,6 +21,10 @@ set(CUDA_USE_STATIC_CUDA_RUNTIME OFF)
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
+find_package(PCL REQUIRED)
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 
 
 add_message_files(
@@ -45,16 +49,16 @@ add_library(eyeHand src/libs/eyeHand.cc)
 
 ######-------------------add_executable--------------------
 #add_executable(image_collector src/image_collector.cc)
-#add_dependencies(image_collector eye_hand_calibration_generate_message_cpp)
 #target_link_libraries(image_collector ${catkin_LIBRARIES} ${OpenCV_LIBS} config)
 
-#add_executable(image_collector_jaka src/image_collector_jaka.cc)
-#add_dependencies(image_collector_jaka eye_hand_calibration_generate_message_cpp)
-#target_link_libraries(image_collector_jaka ${catkin_LIBRARIES} ${OpenCV_LIBS} config)
+add_executable(image_collector_jaka src/image_collector_jaka.cc)
+target_link_libraries(image_collector_jaka ${catkin_LIBRARIES} ${OpenCV_LIBS} config)
 
+add_executable(RGBD_collector_jaka src/RGBD_collector_jaka.cc)
+target_link_libraries(RGBD_collector_jaka ${catkin_LIBRARIES} ${OpenCV_LIBS} ${PCL_LIBRARIES} config)
 
 add_executable(calibration src/calibration.cc)
 target_link_libraries(calibration ${catkin_LIBRARIES} ${OpenCV_LIBS} eyeHand config)
 
-#add_executable(cross src/cross.cc)
-#target_link_libraries(cross ${catkin_LIBRARIES} ${OpenCV_LIBS} config)
+add_executable(cross src/cross.cc)
+target_link_libraries(cross ${catkin_LIBRARIES} ${OpenCV_LIBS} config)

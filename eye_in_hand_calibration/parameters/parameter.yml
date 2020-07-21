@@ -1,18 +1,31 @@
 %YAML:1.0
+##########################################################################
+# image collection
+color_topic: "/camera/color/image_raw"
+depth_topic: "/camera/aligned_depth_to_color/image_raw"
+cloud_topic: "/camera/depth/color/points"
+robot_topic: "/jaka_pose"
+publisher_command_topic: "/command"
+img_num_to_collect: 10
+robotFileName: "parameters/input/robot_pose_jaka_20200422.txt"
+
+
+##########################################################################
+# calibration
 squareSize: 25.0  #mm
 boardWidth: 9
 boardHeight: 7
-robotFileName: "parameters/input/robot_pose_jaka_20200422.txt"
 imageFileName: "parameters/input/imageList.xml"
+
 outputFileName: "parameters/output/out_camera_data.yml"
 eyehandFileName: "parameters/output/EyeHandParameter.yml"
 variFileName: "parameters/output/VarifyPose.yml"
+
 
 Scale2Millimeter: 1.0
 IsRotationInRadian: 0
 IsRotationInRPY: true
 
-color_topic: "/camera/rgb/image_rect_color"  #"color"
 
 varify_num: 5
 
