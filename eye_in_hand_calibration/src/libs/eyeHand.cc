@@ -312,6 +312,8 @@ void readRobotDataInFileStream(string robotFileName, vector<Mat>&RobotPose, vect
 	RobotPose.clear();
 	RobotPosition.clear();
 
+	bool IsRotationInRPY = Config::get<int>("IsRotationInRPY");
+	std::cout << "IsRotationInRPY？ " << IsRotationInRPY << std::endl;
 	double Scale2Radian =1.0;
 	double Scale2Millimeter  = Config::get<double>("Scale2Millimeter");
 	if (!Config::get<bool>("IsRotationInRadian"))
@@ -348,21 +350,28 @@ void readRobotDataInFileStream(string robotFileName, vector<Mat>&RobotPose, vect
 				case 5:
 				RobotPose_data.at<double>(2) = tmp * Scale2Radian;
 				break;
-
-				if (Config::get<bool>("IsRotationInRPY"))
-				{
-					Eigen::Vector3d current_ea(RobotPose_data.at<double>(0), RobotPose_data.at<double>(1), RobotPose_data.at<double>(2));
-					Eigen::AngleAxisd rotation_vector;
-					rotation_vector =
-					Eigen::AngleAxisd(current_ea[2], Eigen::Vector3d::UnitZ()) *
-					Eigen::AngleAxisd(current_ea[1], Eigen::Vector3d::UnitY()) *
-					Eigen::AngleAxisd(current_ea[0], Eigen::Vector3d::UnitX());
-					RobotPose_data.at<double>(0) = rotation_vector.axis()(0)*rotation_vector.angle();
-					RobotPose_data.at<double>(1) = rotation_vector.axis()(1)*rotation_vector.angle();
-					RobotPose_data.at<double>(2) = rotation_vector.axis()(2)*rotation_vector.angle();
-				}
 			}
 		}
+
+		if (IsRotationInRPY)
+		{
+			std::cout << RobotPose_data.at<double>(0) << " " << RobotPose_data.at<double>(1) << " " << RobotPose_data.at<double>(2) << std::endl;
+			Eigen::Vector3d current_ea(RobotPose_data.at<double>(0), RobotPose_data.at<double>(1), RobotPose_data.at<double>(2));
+			Eigen::AngleAxisd rotation_vector;
+			rotation_vector =
+			Eigen::AngleAxisd(current_ea[2], Eigen::Vector3d::UnitZ()) *
+			Eigen::AngleAxisd(current_ea[1], Eigen::Vector3d::UnitY()) *
+			Eigen::AngleAxisd(current_ea[0], Eigen::Vector3d::UnitX());
+			RobotPose_data.at<double>(0) = rotation_vector.axis()(0)*rotation_vector.angle();
+			RobotPose_data.at<double>(1) = rotation_vector.axis()(1)*rotation_vector.angle();
+			RobotPose_data.at<double>(2) = rotation_vector.axis()(2)*rotation_vector.angle();
+			std::cout << RobotPose_data.at<double>(0) << " " << RobotPose_data.at<double>(1) << " " << RobotPose_data.at<double>(2) << std::endl;
+
+			// std::cout << rotation_vector.axis()(0)*rotation_vector.angle() << " "
+			// << rotation_vector.axis()(1)*rotation_vector.angle()
+			// << " " << rotation_vector.axis()(2)*rotation_vector.angle() << std::endl;
+		}
+
 		std::cout<< "\n";
 		for (int i = 0; i < 3; ++i)
 		{
