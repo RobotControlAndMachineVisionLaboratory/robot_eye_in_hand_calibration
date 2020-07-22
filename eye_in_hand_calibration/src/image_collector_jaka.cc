@@ -10,12 +10,14 @@
 #include <ros/package.h>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
 
 //Customed
+#include "mkdir.hpp"
 #include "config.h"
 
 //universal_msgs for communication
@@ -233,6 +235,7 @@ void ImageCollector::displayImg()
 
 int main(int argc, char** argv)
 {
+	createDirectory(pkg_loc + "/parameters/" + Config::get<std::string>("imagefolder") + "/");
 	ros::init(argc, argv, "calibration_image_collector");
 	Config::setParameterFile(pkg_loc + "/parameters/parameter.yml");
 	ImageCollector ic(Config::get<int>("img_num_to_collect"),Config::get<std::string>("robotFileName").c_str(),Config::get<std::string>("color_topic"));

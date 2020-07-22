@@ -7,6 +7,7 @@ cloud_topic: "/camera/depth/color/points"
 robot_topic: "/jaka_pose"
 publisher_command_topic: "/command"
 img_num_to_collect: 10
+imagefolder: "image3"
 robotFileName: "parameters/input/robot_pose_jaka_20200422.txt"
 
 

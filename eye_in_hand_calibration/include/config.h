@@ -7,9 +7,9 @@
 #include <stdlib.h>
 class Config
 {
-	private:
-		static Config* config_;
-		cv::FileStorage file_;
+private:
+	static Config* config_;
+	cv::FileStorage file_;
 
 		Config(){};   //private constructor makes a singleton
 
@@ -24,6 +24,11 @@ class Config
 		static T get(const std::string& key)
 		{
 			T res;
+			if (config_ == NULL)
+			{
+				std::cout << "ERROR: no parameter file set!!!" << std::endl;
+				exit(-1);
+			}
 			if (Config::config_->file_[key].isNone())
 			{
 				std::cout<<"key[" << key << "] in parameter file is None! Check Spell First! Aborting ..."<<std::endl;
@@ -35,6 +40,6 @@ class Config
 			}
 			return res;
 		}
-};
+	};
 
 #endif

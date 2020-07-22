@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   message_generation
   ur_msgs
+  universal_msgs
 )
 
 set(CUDA_USE_STATIC_CUDA_RUNTIME OFF)
@@ -26,15 +27,7 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-
-add_message_files(
-  FILES
-  Command.msg
-  RobotMsg.msg
-)
-
-generate_messages(DEPENDENCIES sensor_msgs std_msgs ur_msgs)
-catkin_package(CATKIN_DEPENDS cv_bridge image_transport roscpp rospy sensor_msgs std_msgs message_runtime)
+catkin_package(CATKIN_DEPENDS cv_bridge image_transport roscpp rospy sensor_msgs std_msgs universal_msgs message_runtime)
 
 include_directories(
   /usr/include/eigen3

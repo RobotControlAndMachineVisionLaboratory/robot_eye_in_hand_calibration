@@ -26,8 +26,6 @@
 
 //Customed
 #include "mkdir.hpp"
-
-//Customed
 #include "config.h"
 
 //universal_msgs for communication
@@ -43,25 +41,10 @@ universal_msgs::RobotMsg> MySyncPolicy;
 static const std::string OPENCV_WINDOW = "Image Collector Window";
 std::string pkg_loc = ros::package::getPath("eye_in_hand_calibration");
 
-
-void TransMsg2Cloud(const sensor_msgs::PointCloud2& input, pcl::PointCloud<pcl::PointXYZ>& cloud)
+template <typename T>
+void TransMsg2Cloud(const sensor_msgs::PointCloud2& input, T& cloud)
 {
 	pcl::fromROSMsg(input, cloud);
-	// if(saveCloud)
-	// {
-	// 	stringstream stream;
-	// 	stream << pkg_loc << "/data/inputCloud"<< filesNum<< ".ply";
-	// 	string filename = stream.str();
-
-	// 	if(io::savePLYFile(filename, cloud, true) == 0)
-	// 	{
-	// 		filesNum++;
-	// 		cout << filename<<" Saved."<<endl;
-	// 	}
-	// 	else PCL_ERROR("Problem saving %s.\n", filename.c_str());
-
-	// 	saveCloud = false;
-	// }
 }
 
 
@@ -77,23 +60,7 @@ void TransMsg2Image(const sensor_msgs::ImageConstPtr &ImageMsg, cv::Mat& imageMa
 		ROS_ERROR("Not able to convert sensor_msgs::Image to OpenCV::Mat format %s", e.what());
 		return;
 	}
-
-	cv::Mat src_image = cv_ptr->image.clone();
-	imageMat = src_image;
-
-	// if(saveImg)
-	// {
-	// 	stringstream stream;
-	// 	stream << pkg_loc << "/data/inputRGB"<< filesNum_<< ".png";
-	// 	string filename = stream.str();
-
-	// 	if(cv::imwrite(filename, src_image))
-	// 	{
-	// 		cout << filename<<" Saved."<<endl;
-	// 	}
-
-	// 	saveImg = false;
-	// }
+	imageMat= cv_ptr->image.clone();
 }
 
 
@@ -102,20 +69,6 @@ void TransMsg2Depth(const sensor_msgs::ImageConstPtr &DepthMsg, cv::Mat& depthMa
 	cv_bridge::CvImageConstPtr pCvImage;
 	pCvImage = cv_bridge::toCvShare(DepthMsg, DepthMsg->encoding);
 	pCvImage->image.copyTo(depthMat);
-
-	// if(saveDepth)
-	// {
-	// 	stringstream stream;
-	// 	stream << pkg_loc << "/data/inputDepth"<< filesNum_<< ".png";
-	// 	string filename = stream.str();
-
-	// 	if(cv::imwrite(filename, depth))
-	// 	{
-	// 		cout << filename<<" Saved."<<endl;
-	// 	}
-
-	// 	saveDepth = false;
-	// }
 }
 
 
@@ -139,7 +92,11 @@ private:
 
 	cv::Mat color;
 	cv::Mat depth;
-	pcl::PointCloud<pcl::PointXYZ> cloud;
+	// PointXYZRGB
+	pcl::PointCloud<pcl::PointXYZRGB> cloud;
+	// PointXYZ
+	// pcl::PointCloud<pcl::PointXYZ> cloud;
+	boost::shared_ptr<pcl::visualization::CloudViewer> viewer;
 
 	int cnt;
 	int im_num;
@@ -191,6 +148,8 @@ ImageCollector::ImageCollector(int im_num_,const char* robot_file,std::string to
 
 	cnt = 0;
 	cv::namedWindow(OPENCV_WINDOW);
+	boost::shared_ptr<pcl::visualization::CloudViewer> v(new pcl::visualization::CloudViewer("CloudViewer"));
+	viewer = v;
 }
 
 ImageCollector::~ImageCollector()
@@ -223,6 +182,7 @@ void ImageCollector::callback(
 
 	TransMsg2Depth(depth_ptr, depth);
 	TransMsg2Cloud(*cloud_ptr, cloud);
+	if(! viewer->wasStopped()) viewer->showCloud(cloud.makeShared());
 
 	robot_pose[0] = robot_msg_ptr->data.tool_vector[0];
 	robot_pose[1] = robot_msg_ptr->data.tool_vector[1];
@@ -270,18 +230,17 @@ void ImageCollector::displayImg()
 			else if(ch == 't')
 			{
 				std::stringstream ss; ss << cnt++;
-				cv::imwrite("parameters/image/image"+ss.str()+".png", color);
+				cv::imwrite(pkg_loc + "/parameters/" + Config::get<std::string>("imagefolder") + "/image"+ss.str()+".png", color);
 				std::cout << "image" + ss.str() + " is saved!" << std::endl;
-				cv::imwrite("parameters/image/depth"+ss.str()+".png", depth);
-				std::cout << "image" + ss.str() + " is saved!" << std::endl;
-				if(pcl::io::savePLYFile("parameters/image/cloud"+ss.str()+".ply", cloud, true) == 0)
+				cv::imwrite(pkg_loc + "/parameters/" + Config::get<std::string>("imagefolder") + "/depth"+ss.str()+".png", depth);
+				std::cout << "depth" + ss.str() + " is saved!" << std::endl;
+				if(pcl::io::savePLYFile(pkg_loc + "/parameters/" + Config::get<std::string>("imagefolder") + "/cloud"+ss.str()+".ply", cloud, true) == 0)
 					std::cout << "cloud"+ss.str()+".ply"<<" is saved!" << std::endl;
-
-
 				if(cnt == im_num)
 				{
 					std::cout << "image collection finished!" << std::endl;
-					exit(0);
+					ros::shutdown();
+					exit(-1);
 				}
 			}
 			else if(ch == 'o')
@@ -322,12 +281,9 @@ void ImageCollector::displayImg()
 				cmd.acce = 1.0;
 				pub_cmd.publish(cmd);
 			}
-			// else
-			// {
-			// 	universal_msgs::Command cmd;
-			// 	cmd.type = 0;
-			// 	pub_cmd.publish(cmd);
-			// }
+			else
+			{
+			}
 		}
 		// end if image data
 		ros::spinOnce();
@@ -340,8 +296,9 @@ void ImageCollector::displayImg()
 
 int main(int argc, char** argv)
 {
-	ros::init(argc, argv, "calibration_image_collector");
 	Config::setParameterFile(pkg_loc + "/parameters/parameter.yml");
+	createDirectory(pkg_loc + "/parameters/" + Config::get<std::string>("imagefolder") + "/");
+	ros::init(argc, argv, "calibration_image_collector");
 	ImageCollector ic(Config::get<int>("img_num_to_collect"),Config::get<std::string>("robotFileName").c_str(),Config::get<std::string>("color_topic"));
 	ic.displayImg();
 	return 0;
