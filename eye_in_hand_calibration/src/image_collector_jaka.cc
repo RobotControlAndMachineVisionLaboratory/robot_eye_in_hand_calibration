@@ -10,8 +10,8 @@
 #include <ros/package.h>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
-#include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
+#include <sensor_msgs/Image.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
@@ -32,6 +32,23 @@ universal_msgs::RobotMsg> MySyncPolicy;
 
 static const std::string OPENCV_WINDOW = "Image Collector Window";
 std::string pkg_loc = ros::package::getPath("eye_in_hand_calibration");
+
+
+
+void TransMsg2Image(const sensor_msgs::ImageConstPtr &ImageMsg, cv::Mat& imageMat)
+{
+	cv_bridge::CvImagePtr cv_ptr;
+	try
+	{
+		cv_ptr=cv_bridge::toCvCopy(ImageMsg, sensor_msgs::image_encodings::BGR8);
+	}
+	catch (cv_bridge::Exception& e)
+	{
+		ROS_ERROR("Not able to convert sensor_msgs::Image to OpenCV::Mat format %s", e.what());
+		return;
+	}
+	imageMat= cv_ptr->image.clone();
+}
 
 
 class ImageCollector
@@ -83,6 +100,11 @@ ImageCollector::ImageCollector(int im_num_,const char* robot_file,std::string to
 		}
 		std::cout << '\n';
 		observe_pose.push_back(temp_pose);
+	}
+	if (im_num> observe_pose.size())
+	{
+		std::cout << "Not Enough observe pose in ${robotFileName}.txt" << std::endl;
+		exit(-1);
 	}
 	image_sub = new message_filters::Subscriber<sensor_msgs::Image>(nh,
 		topic_name, 1);
@@ -150,7 +172,7 @@ void ImageCollector::displayImg()
 			char ch = cv::waitKey(20);
 			if(ch == '9')
 			{
-			 //moveJ
+				// moveJ
 				universal_msgs::Command cmd;
 				cmd.type = 9;
 				cmd.joint = observe_pose[cnt];
@@ -160,10 +182,10 @@ void ImageCollector::displayImg()
 			}
 			if(ch == '5')
 			{
-			 //moveE
+				// moveE
 				universal_msgs::Command cmd;
 				cmd.type = 5;
-				cmd.joint = observe_pose[cnt];
+				cmd.pose = observe_pose[cnt];
 				cmd.speed = 20;
 				cmd.acce = 0;
 				pub_cmd.publish(cmd);
@@ -171,16 +193,17 @@ void ImageCollector::displayImg()
 			else if(ch == 't')
 			{
 				std::stringstream ss; ss << cnt++;
-				cv::imwrite("parameters/image/image"+ss.str()+".png", color);
+				cv::imwrite(pkg_loc + "/parameters/" + Config::get<std::string>("imagefolder") + "/image"+ss.str()+".png", color);
 				std::cout << "image" + ss.str() + " is saved!" << std::endl;
-				if(cnt == im_num){
+				if(cnt == im_num)
+				{
 					std::cout << "image collection finished!" << std::endl;
-					exit(0);
+					ros::shutdown();
 				}
 			}
 			else if(ch == 'o')
 			{
-			// io on
+				// io on
 				universal_msgs::Command cmd;
 				cmd.type = 3;
 				cmd.io = 2;
@@ -188,7 +211,7 @@ void ImageCollector::displayImg()
 			}
 			else if(ch == 'f')
 			{
-			// io offf
+				// io offf
 				universal_msgs::Command cmd;
 				cmd.type = 3;
 				cmd.io = -2;
@@ -196,14 +219,14 @@ void ImageCollector::displayImg()
 			}
 			else if(ch == ' ')
 			{
-			//stop
+				// stop
 				universal_msgs::Command cmd;
 				cmd.type = 4;
 				pub_cmd.publish(cmd);
 			}
 			else if(ch == 'd')
 			{
-			// move down and up
+				// move down and up
 				universal_msgs::Command cmd;
 				cmd.type = 5;
 				cmd.delta_pose.push_back(0);
@@ -216,15 +239,11 @@ void ImageCollector::displayImg()
 				cmd.acce = 1.0;
 				pub_cmd.publish(cmd);
 			}
-			// else
-			// {
-			// 	universal_msgs::Command cmd;
-			// 	cmd.type = 0;
-			// 	pub_cmd.publish(cmd);
-			// }
+			else
+			{
+			}
 		}
 		// end if image data
-		//broadcastPose();
 		ros::spinOnce();
 	}
 	// end of while
@@ -235,10 +254,10 @@ void ImageCollector::displayImg()
 
 int main(int argc, char** argv)
 {
-	createDirectory(pkg_loc + "/parameters/" + Config::get<std::string>("imagefolder") + "/");
-	ros::init(argc, argv, "calibration_image_collector");
 	Config::setParameterFile(pkg_loc + "/parameters/parameter.yml");
-	ImageCollector ic(Config::get<int>("img_num_to_collect"),Config::get<std::string>("robotFileName").c_str(),Config::get<std::string>("color_topic"));
+	createDirectory(pkg_loc + "/parameters/" + Config::get<std::string>("imagefolder") + "/");
+	ros::init(argc, argv, "image_collector");
+	ImageCollector ic(Config::get<int>("img_num_to_collect"), (pkg_loc+"/"+Config::get<std::string>("robotFileName")).c_str(),Config::get<std::string>("color_topic"));
 	ic.displayImg();
 	return 0;
 }

@@ -40,6 +40,8 @@ universal_msgs::RobotMsg> MySyncPolicy;
 
 static const std::string OPENCV_WINDOW = "Image Collector Window";
 std::string pkg_loc = ros::package::getPath("eye_in_hand_calibration");
+boost::shared_ptr<pcl::visualization::CloudViewer> viewer;
+
 
 template <typename T>
 void TransMsg2Cloud(const sensor_msgs::PointCloud2& input, T& cloud)
@@ -96,7 +98,6 @@ private:
 	pcl::PointCloud<pcl::PointXYZRGB> cloud;
 	// PointXYZ
 	// pcl::PointCloud<pcl::PointXYZ> cloud;
-	boost::shared_ptr<pcl::visualization::CloudViewer> viewer;
 
 	int cnt;
 	int im_num;
@@ -115,7 +116,7 @@ public:
 	void displayImg();
 };
 
-ImageCollector::ImageCollector(int im_num_,const char* robot_file,std::string topic_name)
+ImageCollector::ImageCollector(int im_num_, const char* robot_file, std::string topic_name)
 {
 	observe_pose.clear();
 	std::ifstream fin(robot_file);
@@ -131,6 +132,11 @@ ImageCollector::ImageCollector(int im_num_,const char* robot_file,std::string to
 		}
 		std::cout << '\n';
 		observe_pose.push_back(temp_pose);
+	}
+	if (im_num> observe_pose.size())
+	{
+		std::cout << "Not Enough observe pose in ${robotFileName}.txt" << std::endl;
+		exit(-1);
 	}
 	image_sub = new message_filters::Subscriber<sensor_msgs::Image>(nh, Config::get<std::string>("color_topic"), 1);
 	depth_sub = new message_filters::Subscriber<sensor_msgs::Image>(nh, Config::get<std::string>("depth_topic"), 1);
@@ -148,8 +154,6 @@ ImageCollector::ImageCollector(int im_num_,const char* robot_file,std::string to
 
 	cnt = 0;
 	cv::namedWindow(OPENCV_WINDOW);
-	boost::shared_ptr<pcl::visualization::CloudViewer> v(new pcl::visualization::CloudViewer("CloudViewer"));
-	viewer = v;
 }
 
 ImageCollector::~ImageCollector()
@@ -298,8 +302,10 @@ int main(int argc, char** argv)
 {
 	Config::setParameterFile(pkg_loc + "/parameters/parameter.yml");
 	createDirectory(pkg_loc + "/parameters/" + Config::get<std::string>("imagefolder") + "/");
-	ros::init(argc, argv, "calibration_image_collector");
-	ImageCollector ic(Config::get<int>("img_num_to_collect"),Config::get<std::string>("robotFileName").c_str(),Config::get<std::string>("color_topic"));
+	ros::init(argc, argv, "RGBD_image_collector");
+	boost::shared_ptr<pcl::visualization::CloudViewer> v(new pcl::visualization::CloudViewer("CloudViewer"));
+	viewer = v;
+	ImageCollector ic(Config::get<int>("img_num_to_collect"), (pkg_loc+"/"+Config::get<std::string>("robotFileName")).c_str(),Config::get<std::string>("color_topic"));
 	ic.displayImg();
 	return 0;
 }
