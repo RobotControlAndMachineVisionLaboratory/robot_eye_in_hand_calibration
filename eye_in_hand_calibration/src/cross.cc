@@ -15,6 +15,8 @@
 #include <iostream>
 #include <sstream>
 #include <string.h>
+//Eigen
+#include <Eigen/Eigen>
 
 #include <universal_msgs/Command.h>
 #include "config.h"
@@ -23,6 +25,15 @@ static const std::string OPENCV_WINDOW = "Cross";
 
 using std::cout;
 using std::endl;
+template <typename T>
+void getAxisAngle(T &x, T &y, T &z, T &angle)
+{
+	angle = sqrt(x*x+y*y+z*z);
+	x=x/angle;
+	y=y/angle;
+	z=z/angle;
+
+}
 
 class ImageConverter
 {
@@ -47,7 +58,7 @@ public:
 
 		//read intrinc parameters
 		cv::FileStorage fs(camera_file,cv::FileStorage::READ);
-		cv::Mat camera_matrix(3,3,CV_32FC1);
+		cv::Mat camera_matrix(3,3,CV_64FC1);
 		fs["camera_matrix"] >> camera_matrix;
 		fs.release();
 		centre.x = camera_matrix.at<double>(0,2);
@@ -67,6 +78,51 @@ public:
 		}
 		fs_1.release();
 		vari_cnt = 0;
+
+
+		bool IsRotationInRPY = Config::get<int>("IsRotationInRPY");
+		std::cout << "IsRotationInRPY？ " << IsRotationInRPY << std::endl;
+		double Scale2Radian =1.0;
+		double Scale2Millimeter  = 1000.0;
+		// double Scale2Millimeter  = Config::get<double>("Scale2Millimeter");
+		if (!Config::get<bool>("IsRotationInRadian"))
+			Scale2Radian = 180.0/CV_PI;
+		std::cout << "IsRotationInRadian " << Config::get<bool>("IsRotationInRadian") << std::endl;
+		std::cout << "Scale2Radian: " << Scale2Radian << std::endl;
+		for (int i = 0; i < varify_poses.size(); ++i)
+		{
+			if (IsRotationInRPY)
+			{
+				std::cout << varify_poses[i].at<double>(3) << " " << varify_poses[i].at<double>(4) << " " << varify_poses[i].at<double>(5) << std::endl;
+				double x,y,z,angle =0;
+				x=varify_poses[i].at<double>(3);
+				y=varify_poses[i].at<double>(4);
+				z=varify_poses[i].at<double>(5);
+
+				getAxisAngle(x,y,z,angle);
+
+				Eigen::Matrix3d rotation_matrix3d = Eigen::Matrix3d::Identity();
+				Eigen::AngleAxisd rotation_vector(angle, Eigen::Vector3d(x,y,z));
+				std::cout << "rotation vector =\n" << rotation_vector.axis()*rotation_vector.angle() << std::endl;
+				rotation_matrix3d = rotation_vector.toRotationMatrix();
+				Eigen::Vector3d euler_angles_of_in_mat = rotation_matrix3d.eulerAngles(2,1,0);
+
+				varify_poses[i].at<double>(0) = varify_poses[i].at<double>(0)*Scale2Millimeter;
+				varify_poses[i].at<double>(1) = varify_poses[i].at<double>(1)*Scale2Millimeter;
+				varify_poses[i].at<double>(2) = varify_poses[i].at<double>(2)*Scale2Millimeter;
+
+				varify_poses[i].at<double>(3) = euler_angles_of_in_mat(0)*Scale2Radian;
+				varify_poses[i].at<double>(4) = euler_angles_of_in_mat(1)*Scale2Radian;
+				varify_poses[i].at<double>(5) = euler_angles_of_in_mat(2)*Scale2Radian;
+				std::cout << varify_poses[i].at<double>(3) << " " << varify_poses[i].at<double>(4) << " " << varify_poses[i].at<double>(5) << std::endl;
+			}
+
+			std::cout<< "\n";
+			for (int j = 0; j < 6; ++j)
+			{
+				std::cout<< varify_poses[i].at<double>(j) << " ";
+			}
+		}
 
 		//initialize command publisher
 		pub = nh_.advertise<universal_msgs::Command>("command", 1000);
@@ -118,21 +174,32 @@ public:
 				{
 					if(vari_cnt < varify_total)
 					{
-						cmd.type = 2;
+						cmd.type = 5;
 						cmd.pose.push_back(varify_poses[vari_cnt].at<double>(0,0));
 						cmd.pose.push_back(varify_poses[vari_cnt].at<double>(0,1));
 						cmd.pose.push_back(varify_poses[vari_cnt].at<double>(0,2));
 						cmd.pose.push_back(varify_poses[vari_cnt].at<double>(0,3));
 						cmd.pose.push_back(varify_poses[vari_cnt].at<double>(0,4));
 						cmd.pose.push_back(varify_poses[vari_cnt++].at<double>(0,5));
-						cmd.speed = 0.1;
+						cmd.speed = 10;
 						cmd.acce = 0.5;
 						cmd.time = 0;
+
+						// cmd.type = 2;
+						// cmd.pose.push_back(varify_poses[vari_cnt].at<double>(0,0));
+						// cmd.pose.push_back(varify_poses[vari_cnt].at<double>(0,1));
+						// cmd.pose.push_back(varify_poses[vari_cnt].at<double>(0,2));
+						// cmd.pose.push_back(varify_poses[vari_cnt].at<double>(0,3));
+						// cmd.pose.push_back(varify_poses[vari_cnt].at<double>(0,4));
+						// cmd.pose.push_back(varify_poses[vari_cnt++].at<double>(0,5));
+						// cmd.speed = 0.1;
+						// cmd.acce = 0.5;
+						// cmd.time = 0;
 					}
 					else
 						cout << "varify finished!" << endl;
 				}
-			else if(ch == '1')
+				else if(ch == '1')
 			{   //movel
 				cmd.type = 1;
 				cmd.pose.push_back(-0.619);

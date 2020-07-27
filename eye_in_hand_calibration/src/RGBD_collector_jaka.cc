@@ -153,7 +153,7 @@ ImageCollector::ImageCollector(int im_num_, const char* robot_file, std::string 
 	robot_joint = std::vector<float>(6,0.0);
 
 	cnt = 0;
-	cv::namedWindow(OPENCV_WINDOW);
+	cv::namedWindow(OPENCV_WINDOW, cv::WINDOW_NORMAL);
 }
 
 ImageCollector::~ImageCollector()
@@ -217,7 +217,7 @@ void ImageCollector::displayImg()
 				universal_msgs::Command cmd;
 				cmd.type = 9;
 				cmd.joint = observe_pose[cnt];
-				cmd.speed = 20;
+				cmd.speed = Config::get<float>("moveSpeed");
 				cmd.acce = 0;
 				pub_cmd.publish(cmd);
 			}
@@ -227,18 +227,18 @@ void ImageCollector::displayImg()
 				universal_msgs::Command cmd;
 				cmd.type = 5;
 				cmd.pose = observe_pose[cnt];
-				cmd.speed = 20;
+				cmd.speed = Config::get<float>("moveSpeed");
 				cmd.acce = 0;
 				pub_cmd.publish(cmd);
 			}
 			else if(ch == 't')
 			{
 				std::stringstream ss; ss << cnt++;
-				cv::imwrite(pkg_loc + "/parameters/" + Config::get<std::string>("imagefolder") + "/image"+ss.str()+".png", color);
+				cv::imwrite(pkg_loc + "/" + Config::get<std::string>("imagefolder") + "/image"+ss.str()+".png", color);
 				std::cout << "image" + ss.str() + " is saved!" << std::endl;
-				cv::imwrite(pkg_loc + "/parameters/" + Config::get<std::string>("imagefolder") + "/depth"+ss.str()+".png", depth);
+				cv::imwrite(pkg_loc + "/" + Config::get<std::string>("imagefolder") + "/depth"+ss.str()+".png", depth);
 				std::cout << "depth" + ss.str() + " is saved!" << std::endl;
-				if(pcl::io::savePLYFile(pkg_loc + "/parameters/" + Config::get<std::string>("imagefolder") + "/cloud"+ss.str()+".ply", cloud, true) == 0)
+				if(pcl::io::savePLYFile(pkg_loc + "/" + Config::get<std::string>("imagefolder") + "/cloud"+ss.str()+".ply", cloud, true) == 0)
 					std::cout << "cloud"+ss.str()+".ply"<<" is saved!" << std::endl;
 				if(cnt == im_num)
 				{
@@ -281,7 +281,7 @@ void ImageCollector::displayImg()
 				cmd.delta_pose.push_back(0);
 				cmd.delta_pose.push_back(0);
 				cmd.delta_pose.push_back(0);
-				cmd.speed = 2.0;
+				cmd.speed = Config::get<float>("moveSpeed");
 				cmd.acce = 1.0;
 				pub_cmd.publish(cmd);
 			}
@@ -301,7 +301,7 @@ void ImageCollector::displayImg()
 int main(int argc, char** argv)
 {
 	Config::setParameterFile(pkg_loc + "/parameters/parameter.yml");
-	createDirectory(pkg_loc + "/parameters/" + Config::get<std::string>("imagefolder") + "/");
+	createDirectory(pkg_loc + "/" + Config::get<std::string>("imagefolder") + "/");
 	ros::init(argc, argv, "RGBD_image_collector");
 	boost::shared_ptr<pcl::visualization::CloudViewer> v(new pcl::visualization::CloudViewer("CloudViewer"));
 	viewer = v;

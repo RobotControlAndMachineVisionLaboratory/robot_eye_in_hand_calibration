@@ -1,6 +1,6 @@
 %YAML:1.0
 ---
-calibrationDate: "Mon Jul 20 20:15:46 2020\n"
+calibrationDate: "Wed Jul 22 18:16:08 2020\n"
 failedIndex: []
 Eye-hand translation: !!opencv-matrix
    rows: 3

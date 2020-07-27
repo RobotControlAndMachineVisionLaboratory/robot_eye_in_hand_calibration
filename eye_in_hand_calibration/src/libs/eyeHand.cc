@@ -613,7 +613,7 @@ void varify(Mat EH_translation, Mat EyeHandRotation,vector<Mat> RobotPosition,ve
 			//cout << vali_pose.at<double>(0,3) << "  " << vali_pose.at<double>(1,3) << "  " << vali_pose.at<double>(2,3) << endl;
 			}
 
-		//利用RANSAC剔除外点
+			//利用RANSAC剔除外点
 			double vX(0), vY(0), vZ(0),vRx(0),vRy(0),vRz(0);
 
 			Mat vali_x = ransac(vali_Result_x.size(),vali_Result_x,100,0.5,vX);

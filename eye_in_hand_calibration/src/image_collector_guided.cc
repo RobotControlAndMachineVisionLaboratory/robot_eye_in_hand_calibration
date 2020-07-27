@@ -71,6 +71,8 @@ private:
 
 	int cnt;
 	int im_num;
+	std::ofstream ofs_joint;
+	std::ofstream ofs_cart;
 	//call back to recieve image and ur data
 	void callback(const sensor_msgs::ImageConstPtr& img_ptr,
 		const boost::shared_ptr<const universal_msgs::RobotMsg>& robot_msg_ptr);
@@ -84,28 +86,16 @@ public:
 	void displayImg();
 };
 
-ImageCollector::ImageCollector(int im_num_,const char* robot_file,std::string topic_name)
+ImageCollector::ImageCollector(int im_num_,const char* robot_file, std::string topic_name)
 {
 	observe_pose.clear();
-	std::ifstream fin(robot_file);
-	std::string temp;
-	im_num = im_num_;
-	while(getline(fin, temp))
-	{
-		std::vector<float> temp_pose = std::vector<float>(6,0.0);
-		sscanf(temp.c_str(), "%f%f%f%f%f%f",&temp_pose[0],
-			&temp_pose[1],&temp_pose[2],&temp_pose[3],&temp_pose[4],&temp_pose[5]);
-		for(int i = 0; i < 6; i++){
-			std::cout << temp_pose[i] << " ";
-		}
-		std::cout << '\n';
-		observe_pose.push_back(temp_pose);
-	}
-	if (im_num> observe_pose.size())
-	{
-		std::cout << "Not Enough observe pose in ${robotFileName}.txt" << std::endl;
-		exit(-1);
-	}
+	ofs_joint.open(pkg_loc + "/" + Config::get<string>("TeachedRobotJointFileName").c_str(), ios::trunc);
+	ofs_cart.open(pkg_loc + "/" + Config::get<string>("TeachedRobotCartFileName").c_str(), ios::trunc);
+	ofs_joint.close();
+	ofs_cart.close();
+	im_num =im_num_;
+
+
 	image_sub = new message_filters::Subscriber<sensor_msgs::Image>(nh,
 		topic_name, 1);
 
@@ -130,6 +120,8 @@ ImageCollector::~ImageCollector()
 	delete robot_sub;
 	delete sync;
 	cv::destroyWindow(OPENCV_WINDOW);
+	ofs_joint.close();
+	ofs_cart.close();
 }
 
 void ImageCollector::callback(const sensor_msgs::ImageConstPtr& img_ptr,
@@ -193,8 +185,19 @@ void ImageCollector::displayImg()
 			else if(ch == 't')
 			{
 				std::stringstream ss; ss << cnt++;
-				cv::imwrite(pkg_loc + "/parameters/" + Config::get<std::string>("imagefolder") + "/image"+ss.str()+".png", color);
+				cv::imwrite(pkg_loc + "/" + Config::get<std::string>("imagefolder") + "/image"+ss.str()+".png", color);
 				std::cout << "image" + ss.str() + " is saved!" << std::endl;
+				ofs_joint.open(pkg_loc + "/" + Config::get<string>("TeachedRobotJointFileName").c_str(), ios::app);
+				ofs_cart.open(pkg_loc + "/" + Config::get<string>("TeachedRobotCartFileName").c_str(), ios::app);
+
+				ofs_cart << robot_pose[0] << " " << robot_pose[1] << " " << robot_pose[2] << " "
+				<< robot_pose[3] << " " << robot_pose[4] << " " << robot_pose[5] << "\n";
+				ofs_joint << robot_joint[0] << " " << robot_joint[1] << " " << robot_joint[2] << " "
+				<< robot_joint[3] << " " << robot_joint[4] << " " << robot_joint[5] << "\n";
+
+				ofs_joint.close();
+				ofs_cart.close();
+
 				if(cnt == im_num)
 				{
 					std::cout << "image collection finished!" << std::endl;
@@ -255,7 +258,7 @@ void ImageCollector::displayImg()
 int main(int argc, char** argv)
 {
 	Config::setParameterFile(pkg_loc + "/parameters/parameter.yml");
-	createDirectory(pkg_loc + "/parameters/" + Config::get<std::string>("imagefolder") + "/");
+	createDirectory(pkg_loc + "/" + Config::get<std::string>("imagefolder") + "/");
 	ros::init(argc, argv, "image_collector");
 	ImageCollector ic(Config::get<int>("img_num_to_collect"), (pkg_loc+"/"+Config::get<std::string>("robotFileName")).c_str(),Config::get<std::string>("color_topic"));
 	ic.displayImg();

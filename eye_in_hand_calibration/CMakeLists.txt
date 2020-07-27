@@ -50,8 +50,13 @@ target_link_libraries(image_collector_jaka ${catkin_LIBRARIES} ${OpenCV_LIBS} co
 add_executable(RGBD_collector_jaka src/RGBD_collector_jaka.cc)
 target_link_libraries(RGBD_collector_jaka ${catkin_LIBRARIES} ${OpenCV_LIBS} ${PCL_LIBRARIES} config)
 
+add_executable(image_collector_guided src/image_collector_guided.cc)
+target_link_libraries(image_collector_guided ${catkin_LIBRARIES} ${OpenCV_LIBS} config)
+
 add_executable(calibration src/calibration.cc)
 target_link_libraries(calibration ${catkin_LIBRARIES} ${OpenCV_LIBS} eyeHand config)
 
 add_executable(cross src/cross.cc)
 target_link_libraries(cross ${catkin_LIBRARIES} ${OpenCV_LIBS} config)
+
+
